@@ -3,17 +3,17 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
-    public static void main(String[] args) throws InterruptedException {
-        final Dimension SCREEN_DIMENSION = new Dimension(Global.WORLD_SCALE*Global.SCREEN_SIZE, Global.WORLD_SCALE*Global.SCREEN_SIZE);
-        final GameObject apple = new GameObject(Global.WORLD_SCALE, new Color(255, 0 ,0));
-        final GameObject head = new GameObject(Global.WORLD_SCALE, new Color(0, 100, 0));
-        final GameObject body = new GameObject(Global.WORLD_SCALE, new Color(0 , 200, 0));
-        List<GameObject> bodyParts = new ArrayList<>();
-
-        JFrame frame = new JFrame("Snake");
+    static final int WORLD_SCALE = 10, SCREEN_SIZE = 50;
+    static final GameObject apple = new GameObject(WORLD_SCALE, new Color(255, 0 ,0)),head = new GameObject(WORLD_SCALE, new Color(0, 100, 0));
+    static List<GameObject> bodyParts = new ArrayList<>();
+    public static void main(String[] args) throws InterruptedException
+    {
+        final Dimension SCREEN_DIMENSION = new Dimension(WORLD_SCALE*SCREEN_SIZE, WORLD_SCALE*SCREEN_SIZE);
+        GameKeyAdapter gameKeyAdapter = new GameKeyAdapter();
         JPanel panel = new JPanel()
         {
             @Override
@@ -21,64 +21,55 @@ public class Main {
             {
                 super.paintComponent(g);
                 setBackground(new Color(0));
-
-                head.draw(g);
                 apple.draw(g);
                 for(GameObject part : bodyParts)
                     part.draw(g);
             }
         };
-        frame.addKeyListener(new GameKeyListener());
-        frame.add(panel);
 
+        JFrame frame = new JFrame("Snake");
+        frame.add(panel);
+        frame.addKeyListener(gameKeyAdapter);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setSize(SCREEN_DIMENSION);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
+        bodyParts.add(head);
+        head.setPosition(WORLD_SCALE * SCREEN_SIZE/2, WORLD_SCALE * SCREEN_SIZE/2);
+        spawnApple();
         boolean gameRunning = true;
         while(gameRunning)
         {
             panel.repaint();
-            TimeUnit.MILLISECONDS.sleep(500);
+            TimeUnit.MILLISECONDS.sleep(200);
 
-            switch(Global.moveDirection)
-            {
-                case 'w':
-                    head.addPosition(0, Global.WORLD_SCALE*-1);
-                    break;
-                case 'a':
-                    head.addPosition(Global.WORLD_SCALE*-1, 0);
-                    break;
-                case 's':
-                    head.addPosition(0, Global.WORLD_SCALE);
-                    break;
-                case 'd':
-                    head.addPosition(Global.WORLD_SCALE, 0);
-                    break;
+            switch (gameKeyAdapter.getLastKeyPressed()) {
+                case 'w' -> head.setPosition(head.x, head.y + WORLD_SCALE * -1);
+                case 'a' -> head.setPosition(head.x + WORLD_SCALE * -1, head.y);
+                case 's' -> head.setPosition( head.x, head.y + WORLD_SCALE);
+                case 'd' -> head.setPosition(head.x + WORLD_SCALE, head.y);
             }
         }
     }
-}
 
-class GameKeyListener extends KeyAdapter
-{
-    char lastKeyPressed = ' ';
-
-    @Override
-    public void keyPressed(KeyEvent event)
+    static void spawnApple()
     {
-        char keyPressed = event.getKeyChar();
-        if(keyPressed == 'w' && lastKeyPressed != 's')
-            lastKeyPressed = keyPressed;
-        else if(keyPressed == 's' && lastKeyPressed != 'w')
-            lastKeyPressed = keyPressed;
-        else if(keyPressed == 'a' && lastKeyPressed != 'd')
-            lastKeyPressed = keyPressed;
-        else if(keyPressed == 'd' && lastKeyPressed != 'a')
-            lastKeyPressed = keyPressed;
-        Global.moveDirection = lastKeyPressed;
-        System.out.println(Global.moveDirection);
+        Random random = new Random();
+        boolean spawn = true;
+        while(spawn)
+        {
+            spawn = false;
+            apple.setPosition(random.nextInt(WORLD_SCALE * SCREEN_SIZE), random.nextInt(WORLD_SCALE * SCREEN_SIZE));
+            for(GameObject part : bodyParts)
+            {
+                if(part.x == apple.x || part.y == apple.y)
+                {
+                    spawn = true;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -106,16 +97,27 @@ class GameObject
         this.x = x;
         this.y = y;
     }
-
-    public void addPosition(int x, int y)
-    {
-        this.x += x;
-        this.y += y;
-    }
 }
 
-class Global
+class GameKeyAdapter extends KeyAdapter
 {
-    static int WORLD_SCALE = 10, SCREEN_SIZE = 50;
-    static char moveDirection = 'd';
-}
+    public char lastKeyPressed = 'd';
+    @Override
+    public void keyPressed(KeyEvent event)
+    {
+        char keyPressed = event.getKeyChar();
+        if(keyPressed == 'w' && lastKeyPressed != 's')
+            lastKeyPressed = keyPressed;
+        else if(keyPressed == 's' && lastKeyPressed != 'w')
+            lastKeyPressed = keyPressed;
+        else if(keyPressed == 'a' && lastKeyPressed != 'd')
+            lastKeyPressed = keyPressed;
+        else if(keyPressed == 'd' && lastKeyPressed != 'a')
+            lastKeyPressed = keyPressed;
+    }
+
+    public char getLastKeyPressed()
+    {
+        return lastKeyPressed;
+    }
+};
