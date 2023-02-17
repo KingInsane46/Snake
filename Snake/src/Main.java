@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
     static final int WORLD_SCALE = 10, SCREEN_SIZE = 50;
-    static final GameObject apple = new GameObject(WORLD_SCALE, new Color(255, 0 ,0)),head = new GameObject(WORLD_SCALE, new Color(0, 100, 0));
+    static final GameObject APPLE = new GameObject(WORLD_SCALE, new Color(255, 0 ,0)), HEAD = new GameObject(WORLD_SCALE, new Color(0, 100, 0));
     static List<GameObject> bodyParts = new ArrayList<>();
+
     public static void main(String[] args) throws InterruptedException
     {
-        final Dimension SCREEN_DIMENSION = new Dimension(WORLD_SCALE*SCREEN_SIZE, WORLD_SCALE*SCREEN_SIZE);
         GameKeyAdapter gameKeyAdapter = new GameKeyAdapter();
         JPanel panel = new JPanel()
         {
@@ -21,7 +21,8 @@ public class Main {
             {
                 super.paintComponent(g);
                 setBackground(new Color(0));
-                apple.draw(g);
+                APPLE.draw(g);
+                HEAD.draw(g);
                 for(GameObject part : bodyParts)
                     part.draw(g);
             }
@@ -30,25 +31,48 @@ public class Main {
         JFrame frame = new JFrame("Snake");
         frame.add(panel);
         frame.addKeyListener(gameKeyAdapter);
+
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(SCREEN_DIMENSION);
+        frame.setSize(new Dimension(WORLD_SCALE*SCREEN_SIZE, WORLD_SCALE*SCREEN_SIZE));
+        frame.setResizable(false);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        bodyParts.add(head);
-        head.setPosition(WORLD_SCALE * SCREEN_SIZE/2, WORLD_SCALE * SCREEN_SIZE/2);
+        HEAD.setPosition(SCREEN_SIZE/2 * WORLD_SCALE, SCREEN_SIZE/2 * WORLD_SCALE);
         spawnApple();
         boolean gameRunning = true;
         while(gameRunning)
         {
+            TimeUnit.MILLISECONDS.sleep(1000);
             panel.repaint();
-            TimeUnit.MILLISECONDS.sleep(200);
+            int lastX = HEAD.x, lastY = HEAD.y;
 
             switch (gameKeyAdapter.getLastKeyPressed()) {
-                case 'w' -> head.setPosition(head.x, head.y + WORLD_SCALE * -1);
-                case 'a' -> head.setPosition(head.x + WORLD_SCALE * -1, head.y);
-                case 's' -> head.setPosition( head.x, head.y + WORLD_SCALE);
-                case 'd' -> head.setPosition(head.x + WORLD_SCALE, head.y);
+                case 'w' -> HEAD.setPosition(HEAD.x, HEAD.y + WORLD_SCALE * -1);
+                case 'a' -> HEAD.setPosition(HEAD.x + WORLD_SCALE * -1, HEAD.y);
+                case 's' -> HEAD.setPosition( HEAD.x, HEAD.y + WORLD_SCALE);
+                case 'd' -> HEAD.setPosition(HEAD.x + WORLD_SCALE, HEAD.y);
+            }
+            if(bodyParts.size() > 0)
+            {
+                bodyParts.get(0).setPosition(lastX, lastY);
+                bodyParts.add(bodyParts.get(0));
+                bodyParts.remove(0);
+            }
+            if(HEAD.x == APPLE.x && HEAD.y == APPLE.y)
+            {
+                spawnApple();
+                GameObject newGameObject = new GameObject(WORLD_SCALE, new Color(0, 200, 0));
+                newGameObject.setPosition(lastX, lastY);
+                bodyParts.add(newGameObject);
+            }
+            for(GameObject part : bodyParts)
+            {
+                if(part.x == HEAD.x && part.y == HEAD.y)
+                {
+                    gameRunning = false;
+                    break;
+                }
             }
         }
     }
@@ -60,10 +84,15 @@ public class Main {
         while(spawn)
         {
             spawn = false;
-            apple.setPosition(random.nextInt(WORLD_SCALE * SCREEN_SIZE), random.nextInt(WORLD_SCALE * SCREEN_SIZE));
+            APPLE.setPosition(random.nextInt(SCREEN_SIZE) * WORLD_SCALE, random.nextInt(SCREEN_SIZE) * WORLD_SCALE);
+            if(HEAD.x == APPLE.x || HEAD.y == APPLE.y)
+            {
+                spawn = true;
+                break;
+            }
             for(GameObject part : bodyParts)
             {
-                if(part.x == apple.x || part.y == apple.y)
+                if(part.x == APPLE.x || part.y == APPLE.y)
                 {
                     spawn = true;
                     break;
