@@ -27,13 +27,15 @@ public class Main {
                     part.draw(g);
             }
         };
-
+        JLabel ui = new JLabel();
+        ui.setForeground(new Color(255, 255, 255));
+        panel.add(ui);
         JFrame frame = new JFrame("Snake");
         frame.add(panel);
         frame.addKeyListener(gameKeyAdapter);
 
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(new Dimension(WORLD_SCALE*SCREEN_SIZE, WORLD_SCALE*SCREEN_SIZE));
+        frame.setSize(new Dimension(WORLD_SCALE*SCREEN_SIZE+ + 25, WORLD_SCALE*SCREEN_SIZE + 50));
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -43,10 +45,11 @@ public class Main {
         boolean gameRunning = true;
         while(gameRunning)
         {
-            TimeUnit.MILLISECONDS.sleep(1000);
+            ui.setText(String.valueOf(bodyParts.size()));
             panel.repaint();
+            TimeUnit.MILLISECONDS.sleep(150);
+            //Moving
             int lastX = HEAD.x, lastY = HEAD.y;
-
             switch (gameKeyAdapter.getLastKeyPressed()) {
                 case 'w' -> HEAD.setPosition(HEAD.x, HEAD.y + WORLD_SCALE * -1);
                 case 'a' -> HEAD.setPosition(HEAD.x + WORLD_SCALE * -1, HEAD.y);
@@ -59,6 +62,7 @@ public class Main {
                 bodyParts.add(bodyParts.get(0));
                 bodyParts.remove(0);
             }
+            //Collisions
             if(HEAD.x == APPLE.x && HEAD.y == APPLE.y)
             {
                 spawnApple();
@@ -74,7 +78,12 @@ public class Main {
                     break;
                 }
             }
+            if(HEAD.x > WORLD_SCALE*SCREEN_SIZE || HEAD.x < 0 || HEAD.y > WORLD_SCALE*SCREEN_SIZE || HEAD.y < 0)
+            {
+                gameRunning = false;
+            }
         }
+        ui.setText("Final Score: " + bodyParts.size());
     }
 
     static void spawnApple()
@@ -88,7 +97,6 @@ public class Main {
             if(HEAD.x == APPLE.x || HEAD.y == APPLE.y)
             {
                 spawn = true;
-                break;
             }
             for(GameObject part : bodyParts)
             {
@@ -149,4 +157,4 @@ class GameKeyAdapter extends KeyAdapter
     {
         return lastKeyPressed;
     }
-};
+}
